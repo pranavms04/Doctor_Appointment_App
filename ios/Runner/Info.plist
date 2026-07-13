@@ -47,6 +47,10 @@
 			</array>
 		</dict>
 	</dict>
+    <key>NSCameraUsageDescription</key>
+    <string>Doctor Appointment App requires access to the camera for video consultations.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Doctor Appointment App requires access to the microphone for patient consultations.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

@@ -1,18 +1,22 @@
-# doctor_appointment_app
+# 🩺 Doctor Appointment App
 
-A new Flutter project.
+A highly optimized, performance-driven Flutter application tailored for medical practitioners. This project delivers real-time appointment tracking, patient medical histories, clinical session note management, and a network-resilient WebRTC video consultation pipeline built with a unified modern design system token engine.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 🚀 How to Run the App
 
-A few resources to get you started if this is your first Flutter project:
+### Prerequisites
+* **Flutter SDK:** `>=3.3.0`
+* **Dart SDK:** `>=3.3.0`
+* **Cocoapods** (For iOS compilation targets)
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+### Native Permissions Configuration
+Before running the application, ensure your native configuration files are updated for WebRTC camera and microphone hardware stream access:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-# Doctor_Appointment_App
+#### Android (`android/app/src/main/AndroidManifest.xml`)
+```xml
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
