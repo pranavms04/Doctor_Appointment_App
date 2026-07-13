@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:doctor_appointment_app/features/core/theme/theme_constants.dart';
+import '../../core/theme/theme_constants.dart';
 import 'package:doctor_appointment_app/features/presentation/appointment_screen/appointment_screen.dart';
 import 'package:doctor_appointment_app/features/presentation/session_notes_screen/session_notes_screen.dart';
 import 'package:doctor_appointment_app/features/presentation/video_call_screen/video_call_screen.dart';
 import 'package:doctor_appointment_app/features/presentation/profile_screen/profile_screen.dart';
 import 'package:doctor_appointment_app/features/presentation/home_screen/widgets/custom_navigation_drawer.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  // Centralized production queue mock mapping directly into view sections
-  static const List<Map<String, String>> _callQueue = [
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final List<Map<String, String>> _callQueue = [
     {
       "name": "Alex Johnson",
       "id": "PAT1025",
@@ -33,14 +37,13 @@ class HomeScreen extends StatelessWidget {
     },
   ];
 
-  /// Intercepts direct page transitions to show the patient call selection queue instead.
   void _showCallSelectionSheet(
       BuildContext context, {
         Map<String, String>? initialSelectedPatient,
       }) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: ThemeConstants.backgroundColor, // Applied constant global background canvas
+      backgroundColor: ThemeConstants.backgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -67,40 +70,31 @@ class HomeScreen extends StatelessWidget {
                   initialSelectedPatient != null
                       ? "Confirm Video Call Session"
                       : "Select Patient to Call",
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 15),
                 Flexible(
                   child: ListView.builder(
                     shrinkWrap: true,
-                    itemCount: initialSelectedPatient != null
-                        ? 1
-                        : _callQueue.length,
+                    itemCount: initialSelectedPatient != null ? 1 : _callQueue.length,
                     itemBuilder: (ctx, index) {
-                      final patient =
-                          initialSelectedPatient ?? _callQueue[index];
+                      final patient = initialSelectedPatient ?? _callQueue[index];
+                      final bool isCompleted = patient["status"] == "Completed";
+
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         color: ThemeConstants.cardColor,
                         elevation: 0,
                         child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           leading: CircleAvatar(
                             radius: 24,
-                            backgroundColor: ThemeConstants.statusConfirmed.withAlpha(25),
+                            backgroundColor: (isCompleted ? Colors.blue : ThemeConstants.statusConfirmed).withAlpha(25),
                             child: Text(
                               patient["initials"]!,
-                              style: const TextStyle(
-                                color: ThemeConstants.statusConfirmed,
+                              style: TextStyle(
+                                color: isCompleted ? Colors.blue : ThemeConstants.statusConfirmed,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -110,37 +104,38 @@ class HomeScreen extends StatelessWidget {
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           subtitle: Text(
-                            "${patient["id"]} • ${patient["reason"]}\nScheduled: ${patient["time"]}",
+                            "${patient["id"]} • ${patient["reason"]}\nStatus: ${patient["status"]}",
                             style: const TextStyle(fontSize: 12, height: 1.4),
                           ),
                           isThreeLine: true,
                           trailing: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: ThemeConstants.statusConfirmed,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
+                              backgroundColor: isCompleted ? Colors.grey : ThemeConstants.statusConfirmed,
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
                             ),
-                            icon: const Icon(
-                              Icons.video_call_rounded,
+                            icon: Icon(
+                              isCompleted ? Icons.check_circle_outline : Icons.video_call_rounded,
                               size: 20,
                               color: Colors.white,
                             ),
-                            label: const Text(
-                              "Join",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            label: Text(
+                              isCompleted ? "Done" : "Join",
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                             ),
-                            onPressed: () {
+                            onPressed: isCompleted
+                                ? null
+                                : () async {
                               Navigator.pop(context);
-                              Navigator.push(
+                              final sessionFinished = await Navigator.push<bool>(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (_) => const VideoCallScreen(),
-                                ),
+                                MaterialPageRoute(builder: (_) => const VideoCallScreen()),
                               );
+
+                              if (sessionFinished == true) {
+                                setState(() {
+                                  patient["status"] = "Completed";
+                                });
+                              }
                             },
                           ),
                         ),
@@ -159,7 +154,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ThemeConstants.backgroundColor, // Centralized context theme canvas
+      backgroundColor: ThemeConstants.backgroundColor,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: ThemeConstants.cardColor,
@@ -170,34 +165,28 @@ class HomeScreen extends StatelessWidget {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text("Welcome", style: TextStyle(fontSize: 13, color: ThemeConstants.textMutedColor)),
-            Text(
+            const Text(
               "Dr. John Doe",
-              style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
+              style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 20),
             ),
           ],
         ),
         actions: [
           Stack(
             children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_none_rounded),
-                onPressed: () {},
-              ),
+              IconButton(icon: const Icon(Icons.notifications_none_rounded), onPressed: () {}),
               Positioned(
                 right: 12,
                 top: 12,
                 child: Container(
                   height: 10,
                   width: 10,
-                  decoration: const BoxDecoration(
+                  // Fixed: Removed 'const' keyword preceding this container block to accept variables dynamically
+                  decoration: BoxDecoration(
                     color: ThemeConstants.statusCancelled,
                     shape: BoxShape.circle,
                   ),
@@ -207,18 +196,11 @@ class HomeScreen extends StatelessWidget {
           ),
           const Padding(
             padding: EdgeInsets.only(right: 15),
-            child: CircleAvatar(
-              backgroundImage: NetworkImage("https://i.pravatar.cc/150?img=8"),
-            ),
+            child: CircleAvatar(backgroundImage: NetworkImage("https://i.pravatar.cc/150?img=8")),
           ),
         ],
       ),
-
-      /// Injected custom aligned navigation drawer framework
-      drawer: CustomNavigationDrawer(
-        onVideoCallTap: () => _showCallSelectionSheet(context),
-      ),
-
+      drawer: CustomNavigationDrawer(onVideoCallTap: () => _showCallSelectionSheet(context)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(18),
         child: Column(
@@ -228,34 +210,27 @@ class HomeScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: ThemeConstants.primaryColor, // Tied explicitly to primary theme tokens
+                color: ThemeConstants.primaryColor,
                 borderRadius: ThemeConstants.containerRadius,
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   CircleAvatar(
                     radius: 30,
                     backgroundColor: Colors.white,
                     child: Icon(Icons.person, size: 35, color: ThemeConstants.primaryColor),
                   ),
-                  SizedBox(width: 15),
-                  Expanded(
+                  const SizedBox(width: 15),
+                  const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           "Dr. John Doe",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                         SizedBox(height: 5),
-                        Text(
-                          "Cardiologist",
-                          style: TextStyle(color: Colors.white70),
-                        ),
+                        Text("Cardiologist", style: TextStyle(color: Colors.white70)),
                       ],
                     ),
                   ),
@@ -263,10 +238,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 25),
-            const Text(
-              "Quick Actions",
-              style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
-            ),
+            const Text("Quick Actions", style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
             const SizedBox(height: 15),
             GridView.count(
               crossAxisCount: 2,
@@ -281,12 +253,7 @@ class HomeScreen extends StatelessWidget {
                   title: "Appointments",
                   color: Colors.blue,
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AppointmentScreen(),
-                      ),
-                    );
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AppointmentScreen()));
                   },
                 ),
                 _dashboardCard(
@@ -300,12 +267,7 @@ class HomeScreen extends StatelessWidget {
                   title: "Session Notes",
                   color: ThemeConstants.statusUnconfirmed,
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const SessionNotesScreen(),
-                      ),
-                    );
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const SessionNotesScreen()));
                   },
                 ),
                 _dashboardCard(
@@ -313,19 +275,13 @@ class HomeScreen extends StatelessWidget {
                   title: "Profile",
                   color: Colors.purple,
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                    );
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
                   },
                 ),
               ],
             ),
             const SizedBox(height: 30),
-            const Text(
-              "Today's Appointments Queue",
-              style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
-            ),
+            const Text("Today's Appointments Queue", style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
             const SizedBox(height: 15),
 
             ListView.builder(
@@ -334,6 +290,8 @@ class HomeScreen extends StatelessWidget {
               itemCount: _callQueue.length,
               itemBuilder: (context, index) {
                 final patient = _callQueue[index];
+                final bool isCompleted = patient["status"] == "Completed";
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 18),
                   padding: const EdgeInsets.all(18),
@@ -350,38 +308,26 @@ class HomeScreen extends StatelessWidget {
                       _detailRow("Age", patient["age"]!),
                       _detailRow("Phone", patient["phone"]!),
                       _detailRow("Time", patient["time"]!),
-                      _detailRow("Status", patient["status"]!),
+                      _detailRow(
+                          "Status",
+                          patient["status"]!,
+                          textColor: isCompleted ? Colors.blue : (patient["status"] == "Confirmed" ? ThemeConstants.statusConfirmed : ThemeConstants.textMainColor)
+                      ),
                       const SizedBox(height: 20),
                       Row(
                         children: [
                           Expanded(
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                  horizontal: 8,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: ThemeConstants.buttonRadius,
-                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                shape: RoundedRectangleBorder(borderRadius: ThemeConstants.buttonRadius),
                                 alignment: Alignment.center,
                               ),
                               onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const SessionNotesScreen(),
-                                  ),
-                                );
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const SessionNotesScreen()));
                               },
                               icon: const Icon(Icons.note_add, size: 20),
-                              label: const Text(
-                                "Notes",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
+                              label: const Text("Notes", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -389,26 +335,31 @@ class HomeScreen extends StatelessWidget {
                             flex: 2,
                             child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: ThemeConstants.statusConfirmed,
+                                backgroundColor: isCompleted ? Colors.grey : ThemeConstants.statusConfirmed,
                                 minimumSize: const Size.fromHeight(48),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: ThemeConstants.buttonRadius,
-                                ),
+                                shape: RoundedRectangleBorder(borderRadius: ThemeConstants.buttonRadius),
                               ),
-                              onPressed: () => _showCallSelectionSheet(
-                                context,
-                                initialSelectedPatient: patient,
-                              ),
-                              icon: const Icon(
-                                Icons.video_call,
+                              onPressed: isCompleted ? null : () async {
+                                final sessionFinished = await Navigator.push<bool>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const VideoCallScreen(),
+                                  ),
+                                );
+
+                                if (sessionFinished == true) {
+                                  setState(() {
+                                    patient["status"] = "Completed";
+                                  });
+                                }
+                              },
+                              icon: Icon(
+                                isCompleted ? Icons.check_circle : Icons.video_call,
                                 color: Colors.white,
                               ),
-                              label: const Text(
-                                "Start Video Call",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              label: Text(
+                                isCompleted ? "Consultation Completed" : "Start Video Call",
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
@@ -425,7 +376,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  static Widget _dashboardCard({
+  Widget _dashboardCard({
     required IconData icon,
     required String title,
     required Color color,
@@ -449,32 +400,28 @@ class HomeScreen extends StatelessWidget {
               child: Icon(icon, color: color, size: 28),
             ),
             const SizedBox(height: 12),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: ThemeConstants.textMainColor)),
+            Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: ThemeConstants.textMainColor)),
           ],
         ),
       ),
     );
   }
 
-  static Widget _detailRow(String title, String value) {
+  Widget _detailRow(String title, String value, {Color? textColor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              color: ThemeConstants.textMutedColor,
-              fontSize: 14,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w600, color: ThemeConstants.textMutedColor, fontSize: 14),
           ),
           const Spacer(),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: ThemeConstants.textMainColor,
+              color: textColor ?? ThemeConstants.textMainColor,
               fontSize: 14,
             ),
           ),

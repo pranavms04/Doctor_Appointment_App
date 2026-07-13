@@ -52,12 +52,11 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     }
   }
 
-  /// Prompts a verification sheet containing confirmation workflow handling network re-routing
   void _promptCallClosureSheet() {
     showModalBottomSheet(
       context: context,
       backgroundColor: ThemeConstants.backgroundColor,
-      isDismissible: false, // Enforce answer matrix choice handling parameters explicitly
+      isDismissible: false,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -77,9 +76,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Icon(Icons.help_outline_rounded, size: 48, color: ThemeConstants.primaryColor),
+                Icon(Icons.help_outline_rounded, size: 48, color: ThemeConstants.primaryColor),
                 const SizedBox(height: 14),
-                const Text(
+                Text(
                   "Session Verification",
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: ThemeConstants.textMainColor),
                 ),
@@ -101,7 +100,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                           shape: RoundedRectangleBorder(borderRadius: ThemeConstants.buttonRadius),
                         ),
                         onPressed: () {
-                          Navigator.pop(ctx); // Close verification block overlay natively
+                          Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text("Re-establishing WebRTC signal track lines..."),
@@ -126,8 +125,8 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                           shape: RoundedRectangleBorder(borderRadius: ThemeConstants.buttonRadius),
                         ),
                         onPressed: () {
-                          Navigator.pop(ctx); // Close modal panel safely
-                          _executeHardTearDown(); // Purge streams and route out
+                          Navigator.pop(ctx);
+                          _executeHardTearDown(isCompleted: true);
                         },
                         child: const Text(
                           "Yes, Consultation Over",
@@ -145,12 +144,13 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     );
   }
 
-  void _executeHardTearDown() async {
+  // Master single implementation path passing completion boolean markers out safely
+  void _executeHardTearDown({bool isCompleted = false}) async {
     await _webRTCService.dispose();
     _localRenderer.dispose();
     _remoteRenderer.dispose();
     if (mounted) {
-      Navigator.pop(context);
+      Navigator.pop(context, isCompleted);
     }
   }
 
